@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# freefall
 
-## Getting Started
+A mobile-first onchain arcade game on **Base mainnet**. A neon ball falls endlessly while platforms rise from the bottom of the screen — steer it through the gaps. If a platform pushes the ball to the top, it's game over. Every run starts with a transaction, and scores are attested onchain to a global top-10 leaderboard.
 
-First, run the development server:
+## How it works
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **insert coin** — connect your Base wallet (Base Account).
+2. **play** — sends `startGame()` on the FreefallGame contract. The run begins once the transaction confirms.
+3. Steer with **touch drag** (mobile) or **← → / A D** (desktop). Score = platforms passed. Speed ramps up the longer you survive.
+4. On game over, **attest score** sends `attestScore(score)`, recording your result onchain. Skipping it and restarting discards the run — unattested scores don't count.
+5. **top 10** — the global leaderboard, read straight from the contract.
+
+Players pay their own gas for both transactions (two small txs per attested run).
+
+## Contract
+
+`FreefallGame` on Base mainnet: [`0x0ab513621ecedb464d6620bdb77a88e393a141ae`](https://basescan.org/address/0x0ab513621ecedb464d6620bdb77a88e393a141ae)
+
+- `startGame()` — opens a score session for the sender
+- `attestScore(uint96)` — closes the session and records the score; updates `bestScore` and the top-10 board on a new personal best
+- `getTop10()` / `bestScore(address)` / `gamesStarted(address)` — leaderboard reads
+
+Source: [`contracts/FreefallGame.sol`](contracts/FreefallGame.sol)
+
+## Stack
+
+- [Next.js](https://nextjs.org) (App Router) + TypeScript
+- [wagmi](https://wagmi.sh) + [viem](https://viem.sh) with the Base Account connector
+- Canvas 2D rendering at 60fps — no game engine, no dependencies beyond web3
+
+## Project structure
+
+```
+app/            Next.js app shell, providers, global styles
+components/
+  Game.tsx      game orchestration: canvas loop, modes, tx flows, overlays
+  Leaderboard.tsx
+lib/
+  game.ts       pure game engine (physics, platforms, difficulty) — no DOM
+  contract.ts   address + ABI
+  wagmi.ts      chain/connector config
+contracts/      FreefallGame.sol (verified source)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Run locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open http://localhost:3000. The game requires a Base wallet to play; the leaderboard is readable without one.
 
-## Learn More
+To test on a phone, open `http://<your-LAN-IP>:3000` on the same network.
 
-To learn more about Next.js, take a look at the following resources:
+## Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Share score to X
+- [ ] ERC-8021 builder code suffix on transactions
+- [ ] Vercel deployment
