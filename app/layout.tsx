@@ -17,6 +17,9 @@ const arcade = Press_Start_2P({
 export const metadata: Metadata = {
   title: "freefall",
   description: "an onchain arcade game on Base",
+  other: {
+    "base:app_id": "6a2a5ec065478aa1565a9ea3",
+  },
 };
 
 export const viewport: Viewport = {
