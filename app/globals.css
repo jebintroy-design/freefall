@@ -382,6 +382,93 @@ body {
   background: rgba(5, 6, 13, 0.82);
 }
 
+/* ---------- wallet picker ---------- */
+
+.wallet-picker {
+  width: min(340px, calc(100vw - 44px));
+  gap: 14px;
+}
+
+.wallet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.wallet-option {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, #1c2349 0%, #141a38 100%);
+  box-shadow: 0 4px 0 #0a0e22;
+  color: #e8ecff;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.12s ease;
+}
+
+.wallet-option:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0a0e22;
+}
+
+.wallet-option:hover:not(:disabled) {
+  border-color: rgba(61, 242, 255, 0.45);
+}
+
+.wallet-option:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wallet-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wallet-icon-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-arcade), monospace;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #02222c;
+  background: linear-gradient(180deg, #6ff5ff, #0b9fd6);
+}
+
+.wallet-name {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wallet-tag {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #3df2ff;
+  text-transform: uppercase;
+}
+
+.wallet-spin {
+  font-size: 20px;
+  color: #3df2ff;
+  animation: pulse 0.9s ease-in-out infinite;
+}
+
 @keyframes pulse {
   50% {
     opacity: 0.35;

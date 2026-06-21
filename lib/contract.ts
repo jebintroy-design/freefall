@@ -1,8 +1,17 @@
 // FreefallGame on Base mainnet. ABI derived from contracts/FreefallGame.sol
 // (verified source at this address on Blockscout/Basescan).
 
+import { Attribution } from "ox/erc8021";
+
 export const FREEFALL_ADDRESS =
   "0x0ab513621ecedb464d6620bdb77a88e393a141ae" as const;
+
+// ERC-8021 builder-code attribution. The code below is registered on base.dev
+// and is appended (via dataSuffix) to the calldata of every transaction this
+// app sends, so the txs are attributed to us onchain. The suffix is generated
+// by ox's canonical-registry encoder (schema 0) — do not hand-encode it.
+export const BUILDER_CODE = "6a2a5ec065478aa1565a9ea3";
+export const BUILDER_SUFFIX = Attribution.toDataSuffix({ codes: [BUILDER_CODE] });
 
 export const freefallAbi = [
   {

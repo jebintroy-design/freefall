@@ -4,13 +4,13 @@ A mobile-first onchain arcade game on **Base mainnet**. A neon ball falls endles
 
 ## How it works
 
-1. **insert coin** — connect your Base wallet (Base Account).
+1. **insert coin** — connect a wallet on Base: Base Account, or any installed browser extension (MetaMask, Rabby, Coinbase Wallet, …) auto-detected via EIP-6963.
 2. **play** — sends `startGame()` on the FreefallGame contract. The run begins once the transaction confirms.
 3. Steer with **touch drag** (mobile) or **← → / A D** (desktop). Score = platforms passed. Speed ramps up the longer you survive.
 4. On game over, **attest score** sends `attestScore(score)`, recording your result onchain. Skipping it and restarting discards the run — unattested scores don't count.
 5. **top 10** — the global leaderboard, read straight from the contract.
 
-Players pay their own gas for both transactions (two small txs per attested run).
+Players pay their own gas for both transactions (two small txs per attested run). Every transaction carries this app's [ERC-8021](https://erc8021.com) builder-code attribution suffix, generated with `ox/erc8021` and appended to the calldata via viem's `dataSuffix`.
 
 ## Contract
 
@@ -25,7 +25,7 @@ Source: [`contracts/FreefallGame.sol`](contracts/FreefallGame.sol)
 ## Stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
-- [wagmi](https://wagmi.sh) + [viem](https://viem.sh) with the Base Account connector
+- [wagmi](https://wagmi.sh) + [viem](https://viem.sh) — Base Account connector plus EIP-6963 multi-wallet discovery
 - Canvas 2D rendering at 60fps — no game engine, no dependencies beyond web3
 
 ## Project structure
@@ -55,6 +55,7 @@ To test on a phone, open `http://<your-LAN-IP>:3000` on the same network.
 
 ## Roadmap
 
+- [x] ERC-8021 builder code suffix on transactions
+- [x] Multi-wallet connect (Base Account, MetaMask, Rabby, …)
 - [ ] Share score to X
-- [ ] ERC-8021 builder code suffix on transactions
 - [ ] Vercel deployment

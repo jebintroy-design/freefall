@@ -13,7 +13,8 @@ import {
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { base } from "wagmi/chains";
 import { config } from "@/lib/wagmi";
-import { FREEFALL, basescanTxUrl, truncAddr } from "@/lib/contract";
+import { FREEFALL, BUILDER_SUFFIX, basescanTxUrl, truncAddr } from "@/lib/contract";
+import type { Connector } from "wagmi";
 import Leaderboard from "@/components/Leaderboard";
 import {
   LOGICAL_W,
@@ -74,6 +75,8 @@ export default function Game() {
   const [hasOpenSession, setHasOpenSession] = useState(false);
   const [pendingScore, setPendingScore] = useState<number | null>(null);
   const [warnModal, setWarnModal] = useState(false);
+  const [walletPicker, setWalletPicker] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
   const modeRef = useRef<Mode>("title");
   const stateRef = useRef<GameState | null>(null);
@@ -99,7 +102,7 @@ export default function Game() {
 
   const { address, chainId, isConnected } = useConnection();
   const connectors = useConnectors();
-  const { connect, isPending: connectPending, error: connectError } = useConnect();
+  const { connectAsync, error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: switchPending } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
@@ -151,6 +154,7 @@ export default function Game() {
         ...FREEFALL,
         functionName: "startGame",
         chainId: base.id,
+        dataSuffix: BUILDER_SUFFIX,
       });
       const receipt = await waitForTransactionReceipt(config, { hash });
       if (receipt.status !== "success") throw new Error("transaction reverted");
@@ -181,6 +185,7 @@ export default function Game() {
         functionName: "attestScore",
         args: [BigInt(sc)],
         chainId: base.id,
+        dataSuffix: BUILDER_SUFFIX,
       });
       setAttest({ step: "confirming", hash });
       const receipt = await waitForTransactionReceipt(config, { hash });
@@ -205,6 +210,27 @@ export default function Game() {
     boardFromRef.current = modeRef.current === "dead" ? "dead" : "title";
     goMode("board");
   }, [goMode]);
+
+  const pickWallet = useCallback(
+    async (connector: Connector) => {
+      setMenuError(null);
+      setConnectingId(connector.uid);
+      try {
+        await connectAsync({ connector });
+        setWalletPicker(false);
+      } catch (e) {
+        setMenuError(humanizeError(e));
+      } finally {
+        setConnectingId(null);
+      }
+    },
+    [connectAsync],
+  );
+
+  // close the picker once a wallet is connected
+  useEffect(() => {
+    if (isConnected) setWalletPicker(false);
+  }, [isConnected]);
 
   // forget the local session when the wallet disconnects or changes
   useEffect(() => {
@@ -639,6 +665,10 @@ export default function Game() {
 
   const attestBusy = attest.step === "wallet" || attest.step === "confirming";
   const onchainBest = bestRead.data !== undefined ? bestRead.data.toString() : "—";
+  // Base Account first, then EIP-6963 discovered extensions (MetaMask, Rabby, …)
+  const walletConnectors = [...connectors].sort(
+    (a, b) => (a.id === "baseAccount" ? -1 : 0) - (b.id === "baseAccount" ? -1 : 0),
+  );
 
   return (
     <div
@@ -677,13 +707,12 @@ export default function Game() {
                   className="btn btn-arcade"
                   onClick={() => {
                     setMenuError(null);
-                    connect({ connector: connectors[0] });
+                    setWalletPicker(true);
                   }}
-                  disabled={connectPending || !connectors.length}
                 >
-                  {connectPending ? "inserting…" : "insert coin"}
+                  insert coin
                 </button>
-                <div className="menu-note">connects your Base wallet</div>
+                <div className="menu-note">connect a wallet on Base</div>
               </>
             ) : wrongChain ? (
               <button
@@ -785,6 +814,52 @@ export default function Game() {
       )}
 
       {mode === "board" && <Leaderboard onBack={() => goMode(boardFromRef.current)} />}
+
+      {walletPicker && !isConnected && (
+        <div className="overlay overlay-modal">
+          <div className="overlay-panel wallet-picker">
+            <div className="overlay-warn-title">choose wallet</div>
+            <div className="wallet-list">
+              {walletConnectors.map((c) => (
+                <button
+                  key={c.uid}
+                  className="wallet-option"
+                  onClick={() => pickWallet(c)}
+                  disabled={!!connectingId}
+                >
+                  {c.icon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.icon} alt="" className="wallet-icon" />
+                  ) : (
+                    <span className="wallet-icon wallet-icon-fallback">{c.name.charAt(0)}</span>
+                  )}
+                  <span className="wallet-name">
+                    {c.name}
+                    {c.id === "baseAccount" && <span className="wallet-tag">recommended</span>}
+                  </span>
+                  {connectingId === c.uid && <span className="wallet-spin">…</span>}
+                </button>
+              ))}
+              {!walletConnectors.length && (
+                <div className="overlay-note">
+                  no wallets found — install MetaMask, Rabby, or Coinbase Wallet
+                </div>
+              )}
+            </div>
+            {menuError && <div className="error-text">{menuError}</div>}
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setWalletPicker(false);
+                setMenuError(null);
+              }}
+              disabled={!!connectingId}
+            >
+              cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {warnModal && (
         <div className="overlay overlay-modal">
